@@ -181,7 +181,7 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Expanded(
-              child: StreamBuilder<QuerySnapshot>>(
+              child: StreamBuilder<QuerySnapshot>(
                 stream: firestore.collection('Maha').snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -199,7 +199,10 @@ class HomeScreen extends StatelessWidget {
                   return ListView.builder(
                     itemCount: docs.length,
                     itemBuilder: (context, index) {
-                      final data = docs[index].data();
+                      final rawData = docs[index].data();
+                      final data = rawData is Map<String, dynamic>
+                          ? rawData
+                          : <String, dynamic>{};
                       final nameValue = data['name']?.toString() ?? 'بدون اسم';
                       return ListTile(
                         leading: const Icon(Icons.person),
