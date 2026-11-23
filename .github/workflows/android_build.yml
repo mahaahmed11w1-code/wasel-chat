@@ -33,8 +33,10 @@ jobs:
       - name: Initialize Android project files
         run: flutter create --platforms=android --project-name wasel_chat .
 
-      - name: Prepare iOS icon folder
-        run: mkdir -p ios/Runner/Assets.xcassets/AppIcon.appiconset
+      - name: Prepare iOS placeholder files for launcher icons
+        run: |
+          mkdir -p ios/Runner/Assets.xcassets/AppIcon.appiconset ios/Runner.xcodeproj
+          touch ios/Runner.xcodeproj/project.pbxproj
 
       - name: Generate app launcher icons
         run: dart run flutter_launcher_icons
