@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "149081851409",
+    "project_id": "wasel-ea314",
+    "storage_bucket": "wasel-ea314.firebasestorage.app"
+  },
+  "عميل": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:149081851409:android:eab0af7c54934e9dea93b0",
+        "android_client_info": {
+          "package_name": "com.example.wasel_chat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDJpiLXYokCPhJDJ5oinPd8noo0SBJFDzk"
+        }
+      ],
+      "خدمات": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
