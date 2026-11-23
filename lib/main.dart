@@ -20,17 +20,11 @@ class WaselChatApp extends StatelessWidget {
 
   Widget _buildPhoneAuthScreen() {
     return PhoneAuthScreen(
-      onAuthenticated: () {
-        navigatorKey.currentState?.pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => const Scaffold(
-              body: Center(
-                child: Text('تم التحقق من رقم الهاتف بنجاح'),
-              ),
-            ),
-          ),
-        );
-      },
+      onAuthenticated: const Scaffold(
+        body: Center(
+          child: Text('تم التحقق من رقم الهاتف بنجاح'),
+        ),
+      ),
     );
   }
 
