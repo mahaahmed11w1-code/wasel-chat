@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'phone_auth_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const WaselChatApp());
 }
 
@@ -10,6 +14,8 @@ class WaselChatApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final User? currentUser = FirebaseAuth.instance.currentUser;
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'wasel_chat',
@@ -17,7 +23,9 @@ class WaselChatApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0D9488)),
         useMaterial3: true,
       ),
-      home: const MainHomePage(),
+      home: currentUser != null
+          ? const MainHomePage()
+          : const PhoneAuthScreen(onAuthenticated: MainHomePage()),
     );
   }
 }
