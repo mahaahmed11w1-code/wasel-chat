@@ -5,7 +5,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: 'ضع_هنا_apiKey_الكامل',
+      appId: 'ضع_هنا_appId_الكامل',
+      messagingSenderId: '149081851409',
+      projectId: 'wasel-ea314',
+      authDomain: 'wasel-ea314.firebaseapp.com',
+      storageBucket: 'ضع_هنا_storageBucket_الكامل',
+    ),
+  );
   runApp(const WaselApp());
 }
 
