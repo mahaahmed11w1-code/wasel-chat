@@ -1,227 +1,218 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: const FirebaseOptions(
-      apiKey: 'AIzaSyA8510bj5_BE9-AasRnapEY93JHBKzDeoQ',
-      appId: '1:149081851409:web:6a3ac84ca74c4b45ea93b0',
-      messagingSenderId: '149081851409',
-      projectId: 'wasel-ea314',
-      authDomain: 'wasel-ea314.firebaseapp.com',
-      storageBucket: 'wasel-ea314.firebasestorage.app',
-    ),
-  );
-  runApp(const WaselApp());
+  runApp(const WaselChatApp());
 }
 
-class WaselApp extends StatelessWidget {
-  const WaselApp({super.key});
+class WaselChatApp extends StatelessWidget {
+  const WaselChatApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'واصل',
+      title: 'wasel_chat',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0D9488)),
         useMaterial3: true,
       ),
-      home: const AuthGate(),
+      home: const MainHomePage(),
     );
   }
 }
 
-class AuthGate extends StatelessWidget {
-  const AuthGate({super.key});
+class MainHomePage extends StatefulWidget {
+  const MainHomePage({super.key});
+
+  @override
+  State<MainHomePage> createState() => _MainHomePageState();
+}
+
+class _MainHomePageState extends State<MainHomePage> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _pages = const [
+    ChatSectionView(),
+    CallSectionView(),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-
-        if (snapshot.hasData) {
-          return HomeScreen(user: snapshot.data!);
-        }
-
-        return const LoginScreen();
-      },
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_selectedIndex == 0 ? 'وصل - الدردشة' : 'وصل - الاتصال'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.chat),
+            tooltip: 'دردشة',
+            onPressed: () {
+              setState(() {
+                _selectedIndex = 0;
+              });
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.call),
+            tooltip: 'اتصال',
+            onPressed: () {
+              setState(() {
+                _selectedIndex = 1;
+              });
+            },
+          ),
+        ],
+      ),
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (int index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline),
+            selectedIcon: Icon(Icons.chat_bubble),
+            label: 'دردشة',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.call_outlined),
+            selectedIcon: Icon(Icons.call),
+            label: 'اتصال',
+          ),
+        ],
+      ),
     );
   }
 }
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class ChatSectionView extends StatefulWidget {
+  const ChatSectionView({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<ChatSectionView> createState() => _ChatSectionViewState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _isLoading = false;
-  String? _errorMessage;
+class _ChatSectionViewState extends State<ChatSectionView> {
+  final TextEditingController _controller = TextEditingController();
+  final List<String> _messages = [
+    'مرحباً بك في تطبيق وصل للدردشة والاتصال.',
+  ];
 
-  Future<void> _signIn() async {
+  void _sendMessage() {
+    final text = _controller.text.trim();
+    if (text.isEmpty) return;
     setState(() {
-      _isLoading = true;
-      _errorMessage = null;
+      _messages.add(text);
+      _controller.clear();
     });
-
-    try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        _errorMessage = e.message ?? 'تعذر تسجيل الدخول';
-      });
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
   }
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('واصل - تسجيل الدخول')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'البريد الإلكتروني',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'كلمة المرور',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            if (_errorMessage != null) ...[
-              Text(
-                _errorMessage!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-              const SizedBox(height: 12),
-            ],
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _signIn,
-                child: _isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('دخول'),
-              ),
-            ),
-          ],
+    return Column(
+      children: [
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _messages.length,
+            itemBuilder: (context, index) {
+              return Align(
+                alignment: Alignment.centerRight,
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    _messages[index],
+                    style: const TextStyle(fontSize: 15),
+                  ),
+                ),
+              );
+            },
+          ),
         ),
-      ),
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _sendMessage(),
+                    decoration: const InputDecoration(
+                      hintText: 'اكتب رسالة...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton.filled(
+                  onPressed: _sendMessage,
+                  icon: const Icon(Icons.send),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  final User user;
-
-  const HomeScreen({super.key, required this.user});
+class CallSectionView extends StatelessWidget {
+  const CallSectionView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final firestore = FirebaseFirestore.instance;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('واصل'),
-        actions: [
-          IconButton(
-            onPressed: () => FirebaseAuth.instance.signOut(),
-            icon: const Icon(Icons.logout),
-            tooltip: 'تسجيل الخروج',
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('مرحباً: ${user.email ?? user.uid}'),
-            const SizedBox(height: 16),
+            CircleAvatar(
+              radius: 44,
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              child: Icon(
+                Icons.call,
+                size: 42,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 20),
             const Text(
-              'بيانات Firestore:',
-              style: TextStyle(fontWeight: FontWeight.bold),
+              'قسم الاتصال جاهز',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: firestore.collection('Maha').snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-                  if (snapshot.hasError) {
-                    return Text('خطأ في قراءة البيانات: ${snapshot.error}');
-                  }
-
-                  final docs = snapshot.data?.docs ?? [];
-                  if (docs.isEmpty) {
-                    return const Text('لا توجد مستندات بعد.');
-                  }
-
-                  return ListView.builder(
-                    itemCount: docs.length,
-                    itemBuilder: (context, index) {
-                      final rawData = docs[index].data();
-                      final data = rawData is Map<String, dynamic>
-                          ? rawData
-                          : <String, dynamic>{};
-                      final nameValue = data['name']?.toString() ?? 'بدون اسم';
-                      return ListTile(
-                        leading: const Icon(Icons.person),
-                        title: Text(nameValue),
-                        subtitle: Text('المعرف: ${docs[index].id}'),
-                      );
-                    },
-                  );
-                },
-              ),
+            const Text(
+              'اضغط على زر الاتصال لبدء مكالمة تجريبية.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('جاري تهيئة الاتصال...')),
+                );
+              },
+              icon: const Icon(Icons.call),
+              label: const Text('بدء اتصال'),
             ),
           ],
         ),
