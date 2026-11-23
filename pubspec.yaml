@@ -1,5 +1,5 @@
 name: wasel
-description: "تطبيق واصل للدردشة باستخدام Flutter وFirebase"
+description: "تطبيق واصل للدردشة باستخدام Flutter"
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -16,7 +16,9 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.14.3
 
-flutter:
-  uses-material-design: true
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "1795450553860.jpg"
