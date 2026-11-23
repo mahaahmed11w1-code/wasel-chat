@@ -28,7 +28,7 @@ jobs:
           cache: true
 
       - name: Ensure Android platform files exist
-        run: flutter create --platforms=android .
+        run: flutter create --platforms=android --project-name wasel_chat .
 
       - name: Install dependencies
         run: flutter pub get
