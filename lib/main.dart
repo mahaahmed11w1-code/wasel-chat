@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'phone_auth_screen.dart';
 
 String? firebaseInitError;
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,18 +18,26 @@ Future<void> main() async {
 class WaselChatApp extends StatelessWidget {
   const WaselChatApp({super.key});
 
+  Widget _buildPhoneAuthScreen() {
+    return PhoneAuthScreen(
+      onAuthenticated: () {
+        navigatorKey.currentState?.pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => const Scaffold(
+              body: Center(
+                child: Text('تم التحقق من رقم الهاتف بنجاح'),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    User? currentUser;
-    if (firebaseInitError == null) {
-      try {
-        currentUser = FirebaseAuth.instance.currentUser;
-      } catch (e) {
-        firebaseInitError = e.toString();
-      }
-    }
-
     return MaterialApp(
+      navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
       title: 'wasel_chat',
       theme: ThemeData(
@@ -45,7 +53,7 @@ class WaselChatApp extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text(
-                      'تعذرت تهيئة خدمة الاتصال حالياً، ولكن يمكنك متابعة المحاولة:',
+                      'تعذرت تهيئة خدمة الاتصال حالياً:',
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 12),
@@ -57,9 +65,9 @@ class WaselChatApp extends StatelessWidget {
                     const SizedBox(height: 20),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.of(context).pushReplacement(
+                        navigatorKey.currentState?.pushReplacement(
                           MaterialPageRoute(
-                            builder: (_) => const PhoneAuthScreen(),
+                            builder: (_) => _buildPhoneAuthScreen(),
                           ),
                         );
                       },
@@ -69,9 +77,7 @@ class WaselChatApp extends StatelessWidget {
                 ),
               ),
             )
-          : currentUser != null
-              ? const PhoneAuthScreen()
-              : const PhoneAuthScreen(),
+          : _buildPhoneAuthScreen(),
     );
   }
 }
