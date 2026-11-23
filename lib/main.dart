@@ -7,12 +7,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: const FirebaseOptions(
-      apiKey: 'ضع_هنا_apiKey_الكامل',
-      appId: 'ضع_هنا_appId_الكامل',
+      apiKey: 'AIzaSyA8510bj5_BE9-AasRnapEY93JHBKzDeoQ',
+      appId: '1:149081851409:web:6a3ac84ca74c4b45ea93b0',
       messagingSenderId: '149081851409',
       projectId: 'wasel-ea314',
       authDomain: 'wasel-ea314.firebaseapp.com',
-      storageBucket: 'ضع_هنا_storageBucket_الكامل',
+      storageBucket: 'wasel-ea314.firebasestorage.app',
     ),
   );
   runApp(const WaselApp());
