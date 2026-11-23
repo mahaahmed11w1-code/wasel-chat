@@ -9,7 +9,6 @@ on:
 jobs:
   build-android:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -27,39 +26,17 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Ensure Android platform files exist
-        run: flutter create --platforms=android --project-name wasel_chat .
-
-      - name: Update Android SDK and MultiDex
-        run: |
-          python3 -c '
-          import glob, re
-          for path in glob.glob("android/app/build.gradle*"):
-              s = open(path, encoding="utf-8").read()
-              s = re.sub(r"minSdk\s*=?\s*flutter\.minSdkVersion", "minSdk = 23", s)
-              s = re.sub(r"minSdkVersion\s+flutter\.minSdkVersion", "minSdkVersion 23", s)
-              s = re.sub(r"compileSdk\s*=?\s*flutter\.compileSdkVersion", "compileSdk = 34", s)
-              s = re.sub(r"compileSdkVersion\s+flutter\.compileSdkVersion", "compileSdkVersion 34", s)
-              s = re.sub(r"targetSdk\s*=?\s*flutter\.targetSdkVersion", "targetSdk = 34", s)
-              s = re.sub(r"targetSdkVersion\s+flutter\.targetSdkVersion", "targetSdkVersion 34", s)
-              if "multiDexEnabled" not in s:
-                  s = re.sub(r"(versionCode\s*[^\n]+)", r"\1\n        multiDexEnabled = true", s, count=1)
-              open(path, "w", encoding="utf-8").write(s)
-          '
-
       - name: Install dependencies
         run: flutter pub get
+
+      - name: Generate app icons
+        run: dart run flutter_launcher_icons
 
       - name: Build APK
         run: flutter build apk --release
 
-      - name: Build App Bundle (AAB)
-        run: flutter build appbundle --release
-
-      - name: Upload Android Artifacts
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wasel-android-builds
-          path: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/bundle/release/app-release.aab
+          name: app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
