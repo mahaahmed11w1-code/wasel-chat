@@ -4,7 +4,7 @@
     "project_id": "wasel-ea314",
     "storage_bucket": "wasel-ea314.firebasestorage.app"
   },
-  "عميل": [
+  "client": [
     {
       "client_info": {
         "mobilesdk_app_id": "1:149081851409:android:eab0af7c54934e9dea93b0",
