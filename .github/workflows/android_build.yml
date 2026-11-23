@@ -30,6 +30,17 @@ jobs:
       - name: Ensure Android platform files exist
         run: flutter create --platforms=android --project-name wasel_chat .
 
+      - name: Update Android SDK versions
+        run: |
+          python3 -c '
+          import glob
+          for path in glob.glob("android/app/build.gradle*"):
+              s = open(path, encoding="utf-8").read()
+              s = s.replace("minSdk = flutter.minSdkVersion", "minSdk = 23").replace("minSdkVersion flutter.minSdkVersion", "minSdkVersion 23")
+              s = s.replace("compileSdk = flutter.compileSdkVersion", "compileSdk = 35").replace("compileSdkVersion flutter.compileSdkVersion", "compileSdkVersion 35")
+              open(path, "w", encoding="utf-8").write(s)
+          '
+
       - name: Install dependencies
         run: flutter pub get
 
