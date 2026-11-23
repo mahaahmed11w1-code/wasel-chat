@@ -41,8 +41,18 @@ jobs:
       - name: Generate app launcher icons
         run: dart run flutter_launcher_icons
 
+      - name: Configure Gradle memory and Android SDK
+        run: |
+          mkdir -p ~/.gradle
+          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g" > ~/.gradle/gradle.properties
+          if [ -f android/app/build.gradle ]; then
+            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 34/' android/app/build.gradle
+            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/' android/app/build.gradle
+            sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 34/' android/app/build.gradle
+          fi
+
       - name: Build release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --stacktrace
 
       - name: Upload release APK artifact
         uses: actions/upload-artifact@v4
