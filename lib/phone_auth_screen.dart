@@ -19,11 +19,13 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
   bool _codeSent = false;
   bool _isLoading = false;
   String? _statusMessage;
+  bool _isError = false;
 
   Future<void> _sendCode() async {
     final phone = _phoneController.text.trim();
     if (!phone.startsWith('+') || phone.length < 8) {
       setState(() {
+        _isError = true;
         _statusMessage = 'أدخل رقم الهاتف مع رمز الدولة مثل +43... أو +966...';
       });
       return;
@@ -32,38 +34,53 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     setState(() {
       _isLoading = true;
       _statusMessage = null;
+      _isError = false;
     });
 
-    await FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber: phone,
-      timeout: const Duration(seconds: 60),
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        await _signInWithCredential(credential);
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        setState(() {
-          _isLoading = false;
-          _statusMessage = e.message ?? 'فشل إرسال رمز التحقق';
-        });
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        setState(() {
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: phone,
+        timeout: const Duration(seconds: 60),
+        verificationCompleted: (PhoneAuthCredential credential) async {
+          await _signInWithCredential(credential);
+        },
+        verificationFailed: (FirebaseAuthException e) {
+          if (!mounted) return;
+          setState(() {
+            _isLoading = false;
+            _isError = true;
+            _statusMessage = e.message ?? 'فشل إرسال رمز التحقق (${e.code})';
+          });
+        },
+        codeSent: (String verificationId, int? resendToken) {
+          if (!mounted) return;
+          setState(() {
+            _verificationId = verificationId;
+            _codeSent = true;
+            _isLoading = false;
+            _isError = false;
+            _statusMessage = 'تم إرسال رمز التحقق إلى $phone';
+          });
+        },
+        codeAutoRetrievalTimeout: (String verificationId) {
           _verificationId = verificationId;
-          _codeSent = true;
-          _isLoading = false;
-          _statusMessage = 'تم إرسال رمز التحقق إلى $phone';
-        });
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {
-        _verificationId = verificationId;
-      },
-    );
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _isError = true;
+        _statusMessage = 'خطأ غير متوقع: $e';
+      });
+    }
   }
 
   Future<void> _verifyCode() async {
     final code = _otpController.text.trim();
     if (_verificationId == null || code.isEmpty) {
       setState(() {
+        _isError = true;
         _statusMessage = 'أدخل رمز التحقق المكوّن من 6 أرقام';
       });
       return;
@@ -72,6 +89,7 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
     setState(() {
       _isLoading = true;
       _statusMessage = null;
+      _isError = false;
     });
 
     final credential = PhoneAuthProvider.credential(
@@ -92,7 +110,15 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _statusMessage = e.message ?? 'رمز التحقق غير صحيح';
+        _isError = true;
+        _statusMessage = e.message ?? 'رمز التحقق غير صحيح (${e.code})';
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _isError = true;
+        _statusMessage = 'فشل تسجيل الدخول: $e';
       });
     }
   }
@@ -129,7 +155,11 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _sendCode,
                   child: _isLoading
-                      ? const CircularProgressIndicator()
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : const Text('إرسال رمز التحقق'),
                 ),
               ),
@@ -149,7 +179,11 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _verifyCode,
                   child: _isLoading
-                      ? const CircularProgressIndicator()
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : const Text('تأكيد الدخول'),
                 ),
               ),
@@ -170,6 +204,10 @@ class _PhoneAuthScreenState extends State<PhoneAuthScreen> {
               Text(
                 _statusMessage!,
                 textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _isError ? Colors.red : Colors.green,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ],
