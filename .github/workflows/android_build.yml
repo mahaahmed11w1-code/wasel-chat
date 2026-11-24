@@ -1,20 +1,18 @@
-name: Build Android App
+name: Android Build and SHA
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
-  build-android:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Java 17
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
@@ -27,40 +25,16 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Print Android Signing SHA Fingerprints
+        run: |
+          cd android
+          ./gradlew signingReport --no-daemon | grep -E "Variant:|Config:|Store:|Alias:|MD5:|SHA1:|SHA-256:" || true
+
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Initialize Android project files
-        run: flutter create --platforms=android --project-name wasel_chat .
+      - name: Analyze project
+        run: flutter analyze
 
-      - name: Prepare iOS placeholder files for launcher icons
-        run: |
-          mkdir -p ios/Runner/Assets.xcassets/AppIcon.appiconset ios/Runner.xcodeproj
-          touch ios/Runner.xcodeproj/project.pbxproj
-
-      - name: Generate app launcher icons
-        run: dart run flutter_launcher_icons
-
-      - name: Configure Gradle memory and Android SDK
-        run: |
-          mkdir -p ~/.gradle
-          echo "org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g" > ~/.gradle/gradle.properties
-          if [ -f android/app/build.gradle ]; then
-            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 34/' android/app/build.gradle
-            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/' android/app/build.gradle
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/' android/app/build.gradle
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/' android/app/build.gradle
-            sed -i 's/minSdkVersion 21/minSdkVersion 23/' android/app/build.gradle
-            sed -i 's/minSdk = 21/minSdk = 23/' android/app/build.gradle
-            sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 34/' android/app/build.gradle
-            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/' android/app/build.gradle
-          fi
-
-      - name: Build release APK
+      - name: Build Android APK
         run: flutter build apk --release
-
-      - name: Upload release APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
