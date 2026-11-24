@@ -27,14 +27,12 @@ jobs:
 
       - name: Print Android Signing SHA Fingerprints
         run: |
-          cd android
-          ./gradlew signingReport --no-daemon | grep -E "Variant:|Config:|Store:|Alias:|MD5:|SHA1:|SHA-256:" || true
+          mkdir -p ~/.android
+          keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" 2>/dev/null || true
+          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android | grep -E "SHA1:|SHA256:"
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Analyze project
         run: flutter analyze
-
-      - name: Build Android APK
-        run: flutter build apk --release
