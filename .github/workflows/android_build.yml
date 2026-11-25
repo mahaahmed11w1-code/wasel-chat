@@ -1,92 +1,47 @@
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/material.dart';
-import 'phone_auth_screen.dart';
+name: Android Build and SHA
 
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
-class DefaultFirebaseOptions {
-  static FirebaseOptions get currentPlatform {
-    return const FirebaseOptions(
-      apiKey: 'AIzaSyDJpiLXYokCPhJDJ5oinPd8noo0SBJFDzk',
-      appId: '1:149081851409:android:eab0af7c54934e9dea93b0',
-      messagingSenderId: '149081851409',
-      projectId: 'wasel-ea314',
-      storageBucket: 'wasel-ea314.firebasestorage.app',
-    );
-  }
-}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
 
-  String? initError;
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } catch (e) {
-    initError = e.toString();
-  }
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.24.0"
+          channel: stable
+          cache: true
 
-  runApp(WaselChatApp(firebaseInitError: initError));
-}
+      - name: Print Android Signing SHA Fingerprints
+        run: |
+          mkdir -p ~/.android
+          keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" 2>/dev/null || true
+          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android | grep -E "SHA1:|SHA256:"
 
-class WaselChatApp extends StatelessWidget {
-  final String? firebaseInitError;
+      - name: Install dependencies
+        run: flutter pub get
 
-  const WaselChatApp({super.key, this.firebaseInitError});
+      - name: Analyze project
+        run: flutter analyze
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      navigatorKey: navigatorKey,
-      title: 'Wasel Chat',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-      ),
-      home: firebaseInitError != null
-          ? FirebaseErrorScreen(errorMessage: firebaseInitError!)
-          : const PhoneAuthScreen(
-              onAuthenticated: HomePlaceholderScreen(),
-            ),
-    );
-  }
-}
+      - name: Build release APK
+        run: flutter build apk --release
 
-class HomePlaceholderScreen extends StatelessWidget {
-  const HomePlaceholderScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Wasel Chat')),
-      body: const Center(
-        child: Text('تم تسجيل الدخول بنجاح'),
-      ),
-    );
-  }
-}
-
-class FirebaseErrorScreen extends StatelessWidget {
-  final String errorMessage;
-
-  const FirebaseErrorScreen({super.key, required this.errorMessage});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Firebase Initialization Error')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Center(
-          child: SelectableText(
-            errorMessage,
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ),
-    );
-  }
-}
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasel-chat-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
