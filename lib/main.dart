@@ -48,7 +48,9 @@ class WaselChatApp extends StatelessWidget {
       ),
       home: firebaseInitError != null
           ? FirebaseErrorScreen(errorMessage: firebaseInitError!)
-          : const PhoneAuthScreen(),
+          : PhoneAuthScreen(
+              onAuthenticated: () {},
+            ),
     );
   }
 }
