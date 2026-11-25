@@ -25,6 +25,33 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Ensure complete Android v2 project files
+        run: |
+          mkdir -p /tmp/wasel_backup
+          if [ -f android/app/google-services.json ]; then
+            cp android/app/google-services.json /tmp/wasel_backup/google-services.json
+          fi
+          if [ -f android/app/src/main/AndroidManifest.xml ]; then
+            cp android/app/src/main/AndroidManifest.xml /tmp/wasel_backup/AndroidManifest.xml
+          fi
+          if [ -f android/app/src/main/kotlin/com/example/wasel_chat/MainActivity.kt ]; then
+            cp android/app/src/main/kotlin/com/example/wasel_chat/MainActivity.kt /tmp/wasel_backup/MainActivity.kt
+          fi
+
+          rm -rf android
+          flutter create --platforms=android --org com.example --project-name wasel_chat .
+
+          if [ -f /tmp/wasel_backup/google-services.json ]; then
+            cp /tmp/wasel_backup/google-services.json android/app/google-services.json
+          fi
+          if [ -f /tmp/wasel_backup/AndroidManifest.xml ]; then
+            cp /tmp/wasel_backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
+          fi
+          if [ -f /tmp/wasel_backup/MainActivity.kt ]; then
+            mkdir -p android/app/src/main/kotlin/com/example/wasel_chat
+            cp /tmp/wasel_backup/MainActivity.kt android/app/src/main/kotlin/com/example/wasel_chat/MainActivity.kt
+          fi
+
       - name: Print Android Signing SHA Fingerprints
         run: |
           mkdir -p ~/.android
