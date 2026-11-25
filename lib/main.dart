@@ -49,8 +49,22 @@ class WaselChatApp extends StatelessWidget {
       home: firebaseInitError != null
           ? FirebaseErrorScreen(errorMessage: firebaseInitError!)
           : PhoneAuthScreen(
-              onAuthenticated: () {},
+              onAuthenticated: () => const HomePlaceholderScreen(),
             ),
+    );
+  }
+}
+
+class HomePlaceholderScreen extends StatelessWidget {
+  const HomePlaceholderScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Wasel Chat')),
+      body: const Center(
+        child: Text('تم تسجيل الدخول بنجاح'),
+      ),
     );
   }
 }
