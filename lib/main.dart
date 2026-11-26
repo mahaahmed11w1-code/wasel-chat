@@ -20,15 +20,9 @@ class _WaselChatAppState extends State<WaselChatApp> {
 
   final List> _chats = [
     {'name': 'أحمد', 'message': 'أهلاً بك في واصل شات', 'time': '10:00 ص'},
-    {'name': 'سارة', 'message': 'تم تحديث النسخة بنجاح', 'time': '09:45 ص'},
+    {'name': 'سارة', 'message': 'تم تجهيز التطبيق بنجاح', 'time': '09:45 ص'},
     {'name': 'الدعم الفني', 'message': 'كيف يمكننا مساعدتك اليوم؟', 'time': 'أمس'},
   ];
-
-  void _changeLanguage(String code) {
-    setState(() {
-      _locale = Locale(code);
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,95 +36,91 @@ class _WaselChatAppState extends State<WaselChatApp> {
         useMaterial3: true,
       ),
       darkTheme: ThemeData.dark(useMaterial3: true),
-      home: MainHomeScreen(
+      home: WaselHomePage(
         chats: _chats,
         currentLang: _locale.languageCode,
         darkMode: _darkMode,
         userName: _userName,
         userStatus: _userStatus,
-        onLanguageChanged: _changeLanguage,
+        onLangChanged: (code) => setState(() => _locale = Locale(code)),
         onThemeChanged: (val) => setState(() => _darkMode = val),
-        onProfileSaved: (name, status) {
-          setState(() {
-            _userName = name;
-            _userStatus = status;
-          });
-        },
-        onAddChat: (name, msg) {
-          setState(() {
-            _chats.insert(0, {'name': name, 'message': msg, 'time': 'الآن'});
-          });
-        },
+        onSaveProfile: (name, status) => setState(() {
+          _userName = name;
+          _userStatus = status;
+        }),
+        onAddChat: (name, msg) => setState(() {
+          _chats.insert(0, {'name': name, 'message': msg, 'time': 'الآن'});
+        }),
       ),
     );
   }
 }
 
-class MainHomeScreen extends StatefulWidget {
+class WaselHomePage extends StatefulWidget {
   final List> chats;
   final String currentLang;
   final bool darkMode;
   final String userName;
   final String userStatus;
-  final ValueChanged<String> onLanguageChanged;
+  final ValueChanged<String> onLangChanged;
   final ValueChanged<bool> onThemeChanged;
-  final void Function(String name, String status) onProfileSaved;
+  final void Function(String name, String status) onSaveProfile;
   final void Function(String name, String msg) onAddChat;
 
-  const MainHomeScreen({
+  const WaselHomePage({
     super.key,
     required this.chats,
     required this.currentLang,
     required this.darkMode,
     required this.userName,
     required this.userStatus,
-    required this.onLanguageChanged,
+    required this.onLangChanged,
     required this.onThemeChanged,
-    required this.onProfileSaved,
+    required this.onSaveProfile,
     required this.onAddChat,
   });
 
   @override
-  State<MainHomeScreen> createState() => _MainHomeScreenState();
+  State<WaselHomePage> createState() => _WaselHomePageState();
 }
 
-class _MainHomeScreenState extends State<MainHomeScreen> {
-  int _index = 0;
+class _WaselHomePageState extends State<WaselHomePage> {
+  int _selectedIndex = 0;
 
-  void _showNewChatDialog() {
-    final nameCtrl = TextEditingController();
-    final msgCtrl = TextEditingController();
-    showDialog(
+  void _openAddChatDialog() {
+    final nameController = TextEditingController();
+    final msgController = TextEditingController();
+
+    showDialog<void>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('محادثة جديدة'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
-              controller: nameCtrl,
+              controller: nameController,
               decoration: const InputDecoration(labelText: 'الاسم'),
             ),
             TextField(
-              controller: msgCtrl,
+              controller: msgController,
               decoration: const InputDecoration(labelText: 'الرسالة'),
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('إلغاء'),
           ),
           FilledButton(
             onPressed: () {
-              if (nameCtrl.text.trim().isNotEmpty) {
-                widget.onAddChat(
-                  nameCtrl.text.trim(),
-                  msgCtrl.text.trim().isEmpty ? 'مرحباً' : msgCtrl.text.trim(),
-                );
+              final name = nameController.text.trim();
+              final msg = msgController.text.trim();
+              if (name.isNotEmpty) {
+                widget.onAddChat(name, msg.isEmpty ? 'مرحباً' : msg);
               }
-              Navigator.pop(ctx);
+              Navigator.pop(dialogContext);
             },
             child: const Text('إضافة'),
           ),
@@ -141,16 +131,21 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
+    final tabs = [
       ListView.builder(
         itemCount: widget.chats.length,
-        itemBuilder: (context, i) {
-          final item = widget.chats[i];
+        itemBuilder: (context, index) {
+          final chat = widget.chats[index];
+          final name = chat['name'] ?? 'مستخدم';
+          final message = chat['message'] ?? '';
+          final time = chat['time'] ?? '';
           return ListTile(
-            leading: CircleAvatar(child: Text(item['name']![0])),
-            title: Text(item['name']!),
-            subtitle: Text(item['message']!),
-            trailing: Text(item['time']!),
+            leading: CircleAvatar(
+              child: Text(name.isNotEmpty ? name.characters.first : '?'),
+            ),
+            title: Text(name),
+            subtitle: Text(message),
+            trailing: Text(time),
           );
         },
       ),
@@ -168,10 +163,10 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
           ),
         ],
       ),
-      ProfileEditorTab(
+      ProfileEditorSection(
         userName: widget.userName,
         userStatus: widget.userStatus,
-        onSave: widget.onProfileSaved,
+        onSave: widget.onSaveProfile,
       ),
       ListView(
         children: [
@@ -185,19 +180,25 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
             title: const Text('العربية (AR)'),
             value: 'ar',
             groupValue: widget.currentLang,
-            onChanged: (v) => v != null ? widget.onLanguageChanged(v) : null,
+            onChanged: (val) {
+              if (val != null) widget.onLangChanged(val);
+            },
           ),
           RadioListTile<String>(
             title: const Text('English (EN)'),
             value: 'en',
             groupValue: widget.currentLang,
-            onChanged: (v) => v != null ? widget.onLanguageChanged(v) : null,
+            onChanged: (val) {
+              if (val != null) widget.onLangChanged(val);
+            },
           ),
           RadioListTile<String>(
             title: const Text('Deutsch (DE)'),
             value: 'de',
             groupValue: widget.currentLang,
-            onChanged: (v) => v != null ? widget.onLanguageChanged(v) : null,
+            onChanged: (val) {
+              if (val != null) widget.onLangChanged(val);
+            },
           ),
         ],
       ),
@@ -205,16 +206,16 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('واصل شات')),
-      body: pages[_index],
-      floatingActionButton: _index == 0
+      body: tabs[_selectedIndex],
+      floatingActionButton: _selectedIndex == 0
           ? FloatingActionButton(
-              onPressed: _showNewChatDialog,
+              onPressed: _openAddChatDialog,
               child: const Icon(Icons.add_comment),
             )
           : null,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: (idx) => setState(() => _selectedIndex = idx),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.chat), label: 'المحادثات'),
           NavigationDestination(icon: Icon(Icons.donut_large), label: 'الحالات'),
@@ -226,12 +227,12 @@ class _MainHomeScreenState extends State<MainHomeScreen> {
   }
 }
 
-class ProfileEditorTab extends StatefulWidget {
+class ProfileEditorSection extends StatefulWidget {
   final String userName;
   final String userStatus;
   final void Function(String name, String status) onSave;
 
-  const ProfileEditorTab({
+  const ProfileEditorSection({
     super.key,
     required this.userName,
     required this.userStatus,
@@ -239,24 +240,24 @@ class ProfileEditorTab extends StatefulWidget {
   });
 
   @override
-  State<ProfileEditorTab> createState() => _ProfileEditorTabState();
+  State<ProfileEditorSection> createState() => _ProfileEditorSectionState();
 }
 
-class _ProfileEditorTabState extends State<ProfileEditorTab> {
-  late final TextEditingController _nameController;
-  late final TextEditingController _statusController;
+class _ProfileEditorSectionState extends State<ProfileEditorSection> {
+  late final TextEditingController _nameCtrl;
+  late final TextEditingController _statusCtrl;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.userName);
-    _statusController = TextEditingController(text: widget.userStatus);
+    _nameCtrl = TextEditingController(text: widget.userName);
+    _statusCtrl = TextEditingController(text: widget.userStatus);
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _statusController.dispose();
+    _nameCtrl.dispose();
+    _statusCtrl.dispose();
     super.dispose();
   }
 
@@ -269,22 +270,21 @@ class _ProfileEditorTabState extends State<ProfileEditorTab> {
           const CircleAvatar(radius: 42, child: Icon(Icons.person, size: 42)),
           const SizedBox(height: 16),
           TextField(
-            controller: _nameController,
+            controller: _nameCtrl,
             decoration: const InputDecoration(labelText: 'الاسم'),
           ),
           const SizedBox(height: 12),
           TextField(
-            controller: _statusController,
+            controller: _statusCtrl,
             decoration: const InputDecoration(labelText: 'الحالة'),
           ),
           const SizedBox(height: 20),
           FilledButton(
             onPressed: () {
+              final cleanName = _nameCtrl.text.trim();
               widget.onSave(
-                _nameController.text.trim().isEmpty
-                    ? 'مستخدم واصل شات'
-                    : _nameController.text.trim(),
-                _statusController.text.trim(),
+                cleanName.isEmpty ? 'مستخدم واصل شات' : cleanName,
+                _statusCtrl.text.trim(),
               );
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('تم حفظ الملف الشخصي')),
