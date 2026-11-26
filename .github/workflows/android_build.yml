@@ -34,9 +34,15 @@ jobs:
             flutter create --project-name wasel_chat --platforms=android .
           fi
 
-      - name: Update Kotlin and Android SDK versions
+      - name: Update Kotlin, minSdk, and compileSdk versions
         run: |
           sed -i "s/ext.kotlin_version = '[^']*'/ext.kotlin_version = '2.0.21'/g" android/build.gradle || true
+          sed -i "s/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g" android/app/build.gradle || true
+          sed -i "s/minSdkVersion [0-9]\+/minSdkVersion 23/g" android/app/build.gradle || true
+          sed -i "s/minSdk = flutter.minSdkVersion/minSdk = 23/g" android/app/build.gradle || true
+          sed -i "s/minSdk = [0-9]\+/minSdk = 23/g" android/app/build.gradle || true
+          sed -i "s/minSdk = flutter.minSdkVersion/minSdk = 23/g" android/app/build.gradle.kts || true
+          sed -i "s/minSdk = [0-9]\+/minSdk = 23/g" android/app/build.gradle.kts || true
           sed -i "s/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g" android/app/build.gradle || true
           sed -i "s/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/g" android/app/build.gradle || true
 
