@@ -2,12 +2,15 @@ name: Android Build and SHA
 
 on:
   push:
-    branches: [main]
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -15,71 +18,37 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
-          java-version: "17"
+          distribution: 'temurin'
+          java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.24.0"
-          channel: stable
+          flutter-version: '3.24.0'
+          channel: 'stable'
           cache: true
 
-      - name: Ensure complete Android v2 project files
+      - name: Ensure Android project exists
         run: |
-          mkdir -p /tmp/wasel_backup
-          if [ -f android/app/google-services.json ]; then
-            cp android/app/google-services.json /tmp/wasel_backup/google-services.json
-          fi
-          if [ -f android/app/src/main/AndroidManifest.xml ]; then
-            cp android/app/src/main/AndroidManifest.xml /tmp/wasel_backup/AndroidManifest.xml
-          fi
-          if [ -f android/app/src/main/kotlin/com/example/wasel_chat/MainActivity.kt ]; then
-            cp android/app/src/main/kotlin/com/example/wasel_chat/MainActivity.kt /tmp/wasel_backup/MainActivity.kt
+          if [ ! -f "android/app/build.gradle" ] && [ ! -f "android/app/build.gradle.kts" ]; then
+            flutter create --platforms=android .
           fi
 
-          rm -rf android
-          flutter create --platforms=android --org com.example --project-name wasel_chat .
-
-          if [ -f /tmp/wasel_backup/google-services.json ]; then
-            cp /tmp/wasel_backup/google-services.json android/app/google-services.json
-          fi
-          if [ -f /tmp/wasel_backup/AndroidManifest.xml ]; then
-            cp /tmp/wasel_backup/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
-          fi
-          if [ -f /tmp/wasel_backup/MainActivity.kt ]; then
-            mkdir -p android/app/src/main/kotlin/com/example/wasel_chat
-            cp /tmp/wasel_backup/MainActivity.kt android/app/src/main/kotlin/com/example/wasel_chat/MainActivity.kt
-          fi
-
-          if [ -f android/app/build.gradle ]; then
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g' android/app/build.gradle
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle
-            sed -i 's/minSdkVersion [0-9]\+/minSdkVersion 23/g' android/app/build.gradle
-            sed -i 's/minSdk = [0-9]\+/minSdk = 23/g' android/app/build.gradle
-          fi
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 23/g' android/app/build.gradle.kts
-            sed -i 's/minSdk = [0-9]\+/minSdk = 23/g' android/app/build.gradle.kts
-          fi
-
-      - name: Print Android Signing SHA Fingerprints
+      - name: Update Kotlin and Android SDK versions
         run: |
-          mkdir -p ~/.android
-          keytool -genkeypair -v -keystore ~/.android/debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US" 2>/dev/null || true
-          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android | grep -E "SHA1:|SHA256:"
+          sed -i "s/ext.kotlin_version = '[^']*'/ext.kotlin_version = '2.0.21'/g" android/build.gradle || true
+          sed -i "s/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g" android/app/build.gradle || true
+          sed -i "s/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/g" android/app/build.gradle || true
 
       - name: Install dependencies
         run: flutter pub get
-
-      - name: Analyze project
-        run: flutter analyze || true
 
       - name: Build release APK
         run: flutter build apk --release
 
       - name: Upload APK artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: wasel-chat-apk
+          name: wasel-chat-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
