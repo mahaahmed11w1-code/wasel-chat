@@ -34,17 +34,43 @@ jobs:
             flutter create --project-name wasel_chat --platforms=android .
           fi
 
-      - name: Update Kotlin, minSdk, and compileSdk versions
+      - name: Configure Gradle, Kotlin, minSdk, and compileSdk
         run: |
-          sed -i "s/ext.kotlin_version = '[^']*'/ext.kotlin_version = '2.0.21'/g" android/build.gradle || true
-          sed -i "s/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g" android/app/build.gradle || true
-          sed -i "s/minSdkVersion [0-9]\+/minSdkVersion 23/g" android/app/build.gradle || true
-          sed -i "s/minSdk = flutter.minSdkVersion/minSdk = 23/g" android/app/build.gradle || true
-          sed -i "s/minSdk = [0-9]\+/minSdk = 23/g" android/app/build.gradle || true
-          sed -i "s/minSdk = flutter.minSdkVersion/minSdk = 23/g" android/app/build.gradle.kts || true
-          sed -i "s/minSdk = [0-9]\+/minSdk = 23/g" android/app/build.gradle.kts || true
-          sed -i "s/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g" android/app/build.gradle || true
-          sed -i "s/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/g" android/app/build.gradle || true
+          if [ -f "android/gradle/wrapper/gradle-wrapper.properties" ]; then
+            sed -i "s|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.7-all.zip|g" android/gradle/wrapper/gradle-wrapper.properties
+          fi
+
+          if [ -f "android/settings.gradle" ]; then
+            sed -i "s/id \"org.jetbrains.kotlin.android\" version \"[^\"]*\"/id \"org.jetbrains.kotlin.android\" version \"2.0.21\"/g" android/settings.gradle || true
+            sed -i "s/id \"com.android.application\" version \"[^\"]*\"/id \"com.android.application\" version \"8.5.2\"/g" android/settings.gradle || true
+          fi
+
+          if [ -f "android/settings.gradle.kts" ]; then
+            sed -i 's/id("org.jetbrains.kotlin.android") version "[^"]*"/id("org.jetbrains.kotlin.android") version "2.0.21"/g' android/settings.gradle.kts || true
+            sed -i 's/id("com.android.application") version "[^"]*"/id("com.android.application") version "8.5.2"/g' android/settings.gradle.kts || true
+          fi
+
+          if [ -f "android/build.gradle" ]; then
+            sed -i "s/ext.kotlin_version = '[^']*'/ext.kotlin_version = '2.0.21'/g" android/build.gradle || true
+            sed -i 's/ext.kotlin_version = "[^"]*"/ext.kotlin_version = "2.0.21"/g' android/build.gradle || true
+            sed -i "s/com.android.tools.build:gradle:[^'\"]*/com.android.tools.build:gradle:8.5.2/g" android/build.gradle || true
+          fi
+
+          for f in android/app/build.gradle android/app/build.gradle.kts; do
+            if [ -f "$f" ]; then
+              sed -i "s/minSdkVersion flutter.minSdkVersion/minSdkVersion 23/g" "$f" || true
+              sed -i "s/minSdkVersion [0-9]\+/minSdkVersion 23/g" "$f" || true
+              sed -i "s/minSdk = flutter.minSdkVersion/minSdk = 23/g" "$f" || true
+              sed -i "s/minSdk = [0-9]\+/minSdk = 23/g" "$f" || true
+              sed -i "s/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g" "$f" || true
+              sed -i "s/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/g" "$f" || true
+              sed -i "s/compileSdk = [0-9]\+/compileSdk = 35/g" "$f" || true
+              sed -i "s/compileSdkVersion [0-9]\+/compileSdkVersion 35/g" "$f" || true
+              sed -i "s/targetSdk = flutter.targetSdkVersion/targetSdk = 35/g" "$f" || true
+              sed -i "s/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 35/g" "$f" || true
+              sed -i "s/multiDexEnabled false/multiDexEnabled true/g" "$f" || true
+            fi
+          done
 
       - name: Install dependencies
         run: flutter pub get
@@ -56,5 +82,5 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: wasel-chat-release-apk
+          name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
