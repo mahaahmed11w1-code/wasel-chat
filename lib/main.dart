@@ -1776,7 +1776,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           children: [
             if (_sendingImage) const LinearProgressIndicator(),
             Expanded(
-              child: StreamBuilder<QuerySnapshot>>(
+              child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection('chats')
                     .doc(widget.chatId)
